@@ -13,8 +13,7 @@
             FROM
                 UserApplications
             WHERE
-                IsActive = 1
-                AND UserId = @UserId
+                UserId = @UserId
                 AND ApplicationId = @ApplicationId";
 
         public const string UpsertUserApplication = "sp_UpsertUserApplication";

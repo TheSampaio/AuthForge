@@ -28,9 +28,9 @@ namespace Presentation.Extensions
             services.AddScoped<IUserApplicationsRepository, UserApplicationsRepository>();
 
             services.AddScoped<IUsersService, UsersService>();
-            services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IAdminService, AdminService>();
             services.AddScoped<IApplicationsService, ApplicationsService>();
-            services.AddScoped<ISsoService, SsoService>();
+            services.AddScoped<IAuthService, AuthService>();
 
             services.AddSingleton<ICryptoService, Argon2CryptoService>();
             services.AddSingleton<IJwtService, JwtService>();
@@ -57,7 +57,12 @@ namespace Presentation.Extensions
                     };
                 });
 
-            services.AddAuthorization();
+            services.AddAuthorization(options =>
+            {
+                // Platform-management endpoints (e.g. creating applications, listing all users)
+                // require a central /auth token, not a per-application /sso token.
+                options.AddPolicy("CentralOnly", policy => policy.RequireClaim("token_type", "central"));
+            });
             return services;
         }
 

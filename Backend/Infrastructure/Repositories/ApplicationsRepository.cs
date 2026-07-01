@@ -46,5 +46,20 @@ namespace Infrastructure.Repositories
                 ApplicationsStatements.SelectClientIdById, new { Id = id }
             );
         }
+
+        public async Task DeactivateAsync(ApplicationsEntity application, int operationUserId)
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("Id", application.Id);
+            parameters.Add("Name", application.Name);
+            parameters.Add("ClientId", application.ClientId);
+            parameters.Add("ClientSecret", application.ClientSecret);
+            parameters.Add("IsActive", false);
+            parameters.Add("OperationUserId", operationUserId);
+
+            await dbConnection.ExecuteScalarAsync<int>(
+                ApplicationsStatements.UpsertApplication, parameters, commandType: CommandType.StoredProcedure
+            );
+        }
     }
 }

@@ -141,15 +141,30 @@ Update your `appsettings.json`:
 dotnet run --project Presentation
 ```
 
+### 6. Run the Tests
+
+Unit tests cover the Application services (registration/login/SSO join/assign/revoke flows) and the Infrastructure security services (Argon2id hashing, JWT generation), using xUnit and Moq with mocked repositories — no database required.
+
+```bash
+dotnet test Backend/Tests/AuthForge.Tests/AuthForge.Tests.csproj
+```
+
 
 ## 📚 API Endpoints
 
-| Method | Endpoint                | Description                                     |
-| ------ | ----------------------- | ----------------------------------------------- |
-| POST   | `/api/v1/auth/register` | Register a new user                             |
-| POST   | `/api/v1/auth/login`    | Authenticate and receive a JWT                  |
-| GET    | `/api/v1/users`         | Retrieve active users (Requires Authentication) |
-| GET    | `/api/v1/users/{id}`    | Retrieve a user by ID (Requires Authentication) |
+| Method | Endpoint                                                | Description                                                   |
+| ------ | -------------------------------------------------------- | -------------------------------------------------------------- |
+| POST   | `/api/v1/admin/register`                                 | Register the central platform identity                        |
+| POST   | `/api/v1/admin/login`                                    | Authenticate the central identity and receive a JWT           |
+| POST   | `/api/v1/admin/applications`                             | Register a new application (Requires central JWT)             |
+| GET    | `/api/v1/admin/applications`                             | List applications you administer (Requires JWT)               |
+| POST   | `/api/v1/admin/applications/users`                       | Assign a user's role for an application (Requires JWT)         |
+| DELETE | `/api/v1/admin/applications/{clientId}/users/{userId}`   | Revoke a user's access to an application (Requires JWT)        |
+| DELETE | `/api/v1/admin/applications/{clientId}`                  | Deactivate an application (Requires JWT)                       |
+| GET    | `/api/v1/admin/users`                                    | Retrieve active users (Requires central JWT)                  |
+| GET    | `/api/v1/admin/users/{email}`                            | Retrieve a user by e-mail (Requires central JWT)               |
+| POST   | `/api/v1/users/register`                                 | Register (or join) an end user against an application (SSO)   |
+| POST   | `/api/v1/users/login`                                    | Authenticate an end user against an application (SSO)          |
 
 
 ## 📖 API Documentation

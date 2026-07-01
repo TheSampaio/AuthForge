@@ -17,7 +17,7 @@ namespace Application.Services
 
             if (application != null)
             {
-                await userApplicationsRepository.CreateGrantAsync(requesterUserId, application.Id, "Admin", requesterUserId);
+                await userApplicationsRepository.GrantAccessAsync(requesterUserId, application.Id, "Admin", requesterUserId);
             }
 
             return Result<Guid>.Success(clientId);
@@ -32,19 +32,57 @@ namespace Application.Services
 
             if (request.UserId == requesterUserId && request.Role.Equals("User", StringComparison.OrdinalIgnoreCase))
             {
-                await userApplicationsRepository.CreateGrantAsync(request.UserId, application.Id, "User", requesterUserId);
+                await userApplicationsRepository.GrantAccessAsync(request.UserId, application.Id, "User", requesterUserId);
                 return Result<bool>.Success(true);
             }
 
-            var requesterGrant = await userApplicationsRepository.GetGrantAsync(requesterUserId, application.Id);
-            var isRequesterAdmin = requesterGrant?.Roles?.Contains("Admin", StringComparison.OrdinalIgnoreCase) == true;
-
-            if (!isRequesterAdmin)
+            if (!await IsAdminOfApplicationAsync(requesterUserId, application.Id))
                 return Result<bool>.Failure("You do not have administrative privileges for this application.");
 
-            await userApplicationsRepository.CreateGrantAsync(request.UserId, application.Id, request.Role, requesterUserId);
+            await userApplicationsRepository.GrantAccessAsync(request.UserId, application.Id, request.Role, requesterUserId);
 
             return Result<bool>.Success(true);
+        }
+
+        public async Task<Result<bool>> RevokeUserAsync(Guid clientId, int userId, int requesterUserId)
+        {
+            var application = await applicationsRepository.GetByClientIdAsync(clientId);
+
+            if (application is null)
+                return Result<bool>.Failure("Application not found.");
+
+            var targetGrant = await userApplicationsRepository.GetGrantAsync(userId, application.Id);
+
+            if (targetGrant is not { IsActive: true })
+                return Result<bool>.Failure("User does not have access to this application.");
+
+            if (userId != requesterUserId && !await IsAdminOfApplicationAsync(requesterUserId, application.Id))
+                return Result<bool>.Failure("You do not have administrative privileges for this application.");
+
+            await userApplicationsRepository.RevokeAccessAsync(userId, application.Id, requesterUserId);
+
+            return Result<bool>.Success(true);
+        }
+
+        public async Task<Result<bool>> DeactivateApplicationAsync(Guid clientId, int requesterUserId)
+        {
+            var application = await applicationsRepository.GetByClientIdAsync(clientId);
+
+            if (application is null)
+                return Result<bool>.Failure("Application not found.");
+
+            if (!await IsAdminOfApplicationAsync(requesterUserId, application.Id))
+                return Result<bool>.Failure("You do not have administrative privileges for this application.");
+
+            await applicationsRepository.DeactivateAsync(application, requesterUserId);
+
+            return Result<bool>.Success(true);
+        }
+
+        private async Task<bool> IsAdminOfApplicationAsync(int userId, int applicationId)
+        {
+            var grant = await userApplicationsRepository.GetGrantAsync(userId, applicationId);
+            return grant is { IsActive: true } && grant.Roles?.Contains("Admin", StringComparison.OrdinalIgnoreCase) == true;
         }
 
         public async Task<Result<IEnumerable<ApplicationResponse>>> GetUserApplicationsAsync(int userId)
