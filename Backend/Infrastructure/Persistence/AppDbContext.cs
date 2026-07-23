@@ -71,6 +71,7 @@ namespace Infrastructure.Persistence
                         Email = user.Email,
                         PasswordHash = user.PasswordHash,
                         Birthdate = user.Birthdate,
+                        IsPlatformAdmin = user.IsPlatformAdmin,
                         OperationUserId = operationUserId,
                         OperationType = operationType,
                         IsActive = user.IsActive

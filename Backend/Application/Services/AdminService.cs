@@ -16,6 +16,12 @@ namespace Application.Services
     {
         public async Task<Result<int>> RegisterAsync(RegisterRequest request)
         {
+            // The platform has exactly one central admin. Once it exists, this endpoint must
+            // never create another central identity, or anyone who finds the route could grant
+            // themselves full control over every registered application.
+            if (await usersRepository.ExistsPlatformAdminAsync())
+                return Result<int>.Failure("Platform admin has already been configured.");
+
             var existingUser = await usersRepository.GetByEmailAsync(request.Email);
 
             if (existingUser is not null)
@@ -29,7 +35,8 @@ namespace Application.Services
                 LastName = request.LastName,
                 Email = request.Email,
                 PasswordHash = hashedPassword,
-                Birthdate = request.Birthdate
+                Birthdate = request.Birthdate,
+                IsPlatformAdmin = true
             };
 
             var userId = await usersRepository.CreateAsync(newUser);
@@ -40,7 +47,10 @@ namespace Application.Services
         {
             var user = await usersRepository.GetByEmailAsync(request.Email);
 
-            if (user is null || !cryptoService.VerifyPassword(request.Password, user.PasswordHash))
+            // Users is shared with per-application SSO identities; without this check, any
+            // end user of any connected application could log in here and receive a central
+            // token, since their credentials alone would otherwise pass verification.
+            if (user is null || !user.IsPlatformAdmin || !cryptoService.VerifyPassword(request.Password, user.PasswordHash))
                 return Result<LoginResponse>.Failure("Invalid email or password.");
 
             var token = jwtService.GenerateToken(user);

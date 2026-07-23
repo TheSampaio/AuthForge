@@ -8,5 +8,6 @@ namespace Domain.Interfaces
         Task<UsersEntity?> GetByIdAsync(int id);
         Task<UsersEntity?> GetByEmailAsync(string email);
         Task<int> CreateAsync(UsersEntity user);
+        Task<bool> ExistsPlatformAdminAsync();
     }
 }

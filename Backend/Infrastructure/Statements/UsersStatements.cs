@@ -11,6 +11,7 @@ namespace Infrastructure.Statements
                 password_hash,
                 birthdate,
                 is_active,
+                is_platform_admin,
                 created_at_utc
             FROM
                 users
@@ -26,6 +27,7 @@ namespace Infrastructure.Statements
                 password_hash,
                 birthdate,
                 is_active,
+                is_platform_admin,
                 created_at_utc
             FROM
                 users
@@ -42,11 +44,19 @@ namespace Infrastructure.Statements
                 password_hash,
                 birthdate,
                 is_active,
+                is_platform_admin,
                 created_at_utc
             FROM
                 users
             WHERE
                 is_active = true
                 AND email = @Email";
+
+        public const string ExistsPlatformAdmin = @"
+            SELECT EXISTS(
+                SELECT 1
+                FROM users
+                WHERE is_platform_admin = true
+            )";
     }
 }

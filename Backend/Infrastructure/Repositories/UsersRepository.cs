@@ -42,5 +42,10 @@ namespace Infrastructure.Repositories
 
             return user.Id;
         }
+
+        public async Task<bool> ExistsPlatformAdminAsync()
+        {
+            return await dbConnection.ExecuteScalarAsync<bool>(UsersStatements.ExistsPlatformAdmin);
+        }
     }
 }

@@ -32,6 +32,9 @@ namespace Domain.Entities
         public bool IsActive { get; set; } = true;
 
         [Required]
+        public bool IsPlatformAdmin { get; set; }
+
+        [Required]
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     }
 }

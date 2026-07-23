@@ -17,6 +17,12 @@ namespace Infrastructure.Persistence.Configurations
             // avoids Npgsql's requirement that "timestamp with time zone" values be UTC-kind,
             // which client-supplied DateTimes without an explicit offset never are.
             builder.Property(u => u.Birthdate).HasColumnType("date");
+
+            // Enforces "at most one platform admin" at the database level too, closing the race
+            // window between two concurrent registrations both passing the application-level check.
+            builder.HasIndex(u => u.IsPlatformAdmin)
+                .IsUnique()
+                .HasFilter("is_platform_admin = true");
         }
     }
 }

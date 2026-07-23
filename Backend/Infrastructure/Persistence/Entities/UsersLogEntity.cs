@@ -20,6 +20,8 @@ namespace Infrastructure.Persistence.Entities
 
         public DateTime? Birthdate { get; set; }
 
+        public bool IsPlatformAdmin { get; set; }
+
         public int OperationUserId { get; set; }
 
         public string OperationType { get; set; } = string.Empty;
