@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Domain.Entities
 {
-    [Table("Users")]
     public class UsersEntity
     {
         [Key]
@@ -31,6 +30,9 @@ namespace Domain.Entities
 
         [Required]
         public bool IsActive { get; set; } = true;
+
+        [Required]
+        public bool IsPlatformAdmin { get; set; }
 
         [Required]
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;

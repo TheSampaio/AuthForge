@@ -29,6 +29,11 @@ namespace Infrastructure.Security
             if (!string.IsNullOrWhiteSpace(roles))
                 claims.Add(new Claim(ClaimTypes.Role, roles));
 
+            // Distinguishes central identity tokens (issued by /auth) from per-application
+            // SSO tokens (issued by /sso), so endpoints that manage the platform itself
+            // (e.g. creating applications, listing all users) can require the former.
+            claims.Add(new Claim("token_type", string.IsNullOrWhiteSpace(audience) ? "central" : "sso"));
+
             var expirationInMinutes = int.Parse(jwtSettings["ExpirationInMinutes"] ?? "60");
             var configuredAudience = string.IsNullOrWhiteSpace(audience) ? jwtSettings["Audience"] : audience;
 

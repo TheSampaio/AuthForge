@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Presentation.Controllers
 {
-    [Authorize]
+    [Authorize(Policy = "CentralOnly")]
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/admin/users")]
     public class UsersController(
         IUsersService usersService
     )

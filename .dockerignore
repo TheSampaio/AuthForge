@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+**/.vs/
+.git/
+.github/
+.vscode/
+**/*.user
+Backend/Tests/
+README.md
+LICENSE

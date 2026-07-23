@@ -1,52 +1,62 @@
-﻿namespace Infrastructure.Statements
+namespace Infrastructure.Statements
 {
     public class UsersStatements
     {
         public const string SelectAll = @"
             SELECT
-                Id,
-                FirstName,
-                LastName,
-                Email,
-                PasswordHash,
-                Birthdate,
-                IsActive,
-                CreatedAtUtc
+                id,
+                first_name,
+                last_name,
+                email,
+                password_hash,
+                birthdate,
+                is_active,
+                is_platform_admin,
+                created_at_utc
             FROM
-                Users
+                users
             WHERE
-                IsActive = 1";
+                is_active = true";
 
         public const string SelectById = @"
             SELECT
-                Id,
-                FirstName,
-                LastName,
-                Email,
-                PasswordHash,
-                Birthdate,
-                IsActive,
-                CreatedAtUtc
+                id,
+                first_name,
+                last_name,
+                email,
+                password_hash,
+                birthdate,
+                is_active,
+                is_platform_admin,
+                created_at_utc
             FROM
-                Users
+                users
             WHERE
-                IsActive = 1
-                AND Id = @Id";
+                is_active = true
+                AND id = @Id";
 
         public const string SelectByEmail = @"
             SELECT
-                Id,
-                FirstName,
-                LastName,
-                Email,
-                PasswordHash,
-                Birthdate,
-                IsActive,
-                CreatedAtUtc
+                id,
+                first_name,
+                last_name,
+                email,
+                password_hash,
+                birthdate,
+                is_active,
+                is_platform_admin,
+                created_at_utc
             FROM
-                Users
+                users
             WHERE
-                IsActive = 1
-                AND Email = @Email";
+                is_active = true
+                AND email = @Email";
+
+        public const string ExistsPlatformAdmin = @"
+            SELECT EXISTS(
+                SELECT 1
+                FROM users
+                WHERE is_platform_admin = true
+            )";
     }
 }

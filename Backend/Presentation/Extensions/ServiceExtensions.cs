@@ -1,12 +1,15 @@
 ﻿using Application.Interfaces;
 using Application.Services;
+using Dapper;
 using Domain.Interfaces;
+using Infrastructure.Persistence;
 using Infrastructure.Repositories;
 using Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using Npgsql;
 using Presentation.Swagger;
 using System.Data;
 using System.Reflection;
@@ -21,21 +24,58 @@ namespace Presentation.Extensions
             var connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("Connection string not found.");
 
-            services.AddScoped<IDbConnection>(_ => new SqlConnection(connectionString));
+            connectionString = NormalizeConnectionString(connectionString);
+
+            // All Postgres columns are snake_case while entity properties stay PascalCase;
+            // this lets Dapper map them without aliasing every column in every query.
+            DefaultTypeMap.MatchNamesWithUnderscores = true;
+
+            services.AddDbContext<AppDbContext>(options => options
+                .UseNpgsql(connectionString)
+                .UseSnakeCaseNamingConvention());
+
+            // Dapper reads and EF Core writes share the same connection within a request scope.
+            services.AddScoped<IDbConnection>(sp => sp.GetRequiredService<AppDbContext>().Database.GetDbConnection());
 
             services.AddScoped<IUsersRepository, UsersRepository>();
             services.AddScoped<IApplicationsRepository, ApplicationsRepository>();
             services.AddScoped<IUserApplicationsRepository, UserApplicationsRepository>();
 
             services.AddScoped<IUsersService, UsersService>();
-            services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IAdminService, AdminService>();
             services.AddScoped<IApplicationsService, ApplicationsService>();
-            services.AddScoped<ISsoService, SsoService>();
+            services.AddScoped<IAuthService, AuthService>();
 
             services.AddSingleton<ICryptoService, Argon2CryptoService>();
             services.AddSingleton<IJwtService, JwtService>();
 
             return services;
+        }
+
+        /// <summary>
+        /// Converts a "postgres://user:password@host:port/database" URI - the format Render and
+        /// most other PaaS providers inject managed database credentials in - into the
+        /// keyword=value format Npgsql expects. Strings already in that format pass through unchanged.
+        /// </summary>
+        /// <param name="connectionString">The raw connection string from configuration.</param>
+        /// <returns>A connection string in Npgsql keyword=value format.</returns>
+        private static string NormalizeConnectionString(string connectionString)
+        {
+            if (!Uri.TryCreate(connectionString, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != "postgres" && uri.Scheme != "postgresql"))
+                return connectionString;
+
+            var userInfo = uri.UserInfo.Split(':', 2);
+
+            return new NpgsqlConnectionStringBuilder
+            {
+                Host = uri.Host,
+                Port = uri.Port,
+                Username = Uri.UnescapeDataString(userInfo[0]),
+                Password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty,
+                Database = uri.AbsolutePath.TrimStart('/'),
+                SslMode = SslMode.Require
+            }.ToString();
         }
 
         public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
@@ -57,7 +97,12 @@ namespace Presentation.Extensions
                     };
                 });
 
-            services.AddAuthorization();
+            services.AddAuthorization(options =>
+            {
+                // Platform-management endpoints (e.g. creating applications, listing all users)
+                // require a central /auth token, not a per-application /sso token.
+                options.AddPolicy("CentralOnly", policy => policy.RequireClaim("token_type", "central"));
+            });
             return services;
         }
 

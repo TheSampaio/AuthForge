@@ -1,22 +1,19 @@
-﻿namespace Infrastructure.Statements
+namespace Infrastructure.Statements
 {
     public class UserApplicationsStatements
     {
         public const string SelectGrant = @"
             SELECT
-                Id,
-                UserId,
-                ApplicationId,
-                Roles,
-                IsActive,
-                CreatedAtUtc
+                id,
+                user_id,
+                application_id,
+                roles,
+                is_active,
+                created_at_utc
             FROM
-                UserApplications
+                user_applications
             WHERE
-                IsActive = 1
-                AND UserId = @UserId
-                AND ApplicationId = @ApplicationId";
-
-        public const string UpsertUserApplication = "sp_UpsertUserApplication";
+                user_id = @UserId
+                AND application_id = @ApplicationId";
     }
 }
