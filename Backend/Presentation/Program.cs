@@ -36,4 +36,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+// Unversioned and anonymous on purpose: infrastructure (e.g. Render's health check) probes
+// this before the app is known to be authenticated or API-versioned correctly.
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+
 app.Run();

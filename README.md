@@ -160,6 +160,37 @@ dotnet test Backend/Tests/AuthForge.Tests/AuthForge.Tests.csproj
 ```
 
 
+## 🐳 Running with Docker
+
+`docker-compose` runs the API together with a local PostgreSQL instance — no manually installed or started Postgres required.
+
+Provide `JWT_SECRET_KEY` and `CRYPTO_PEPPER` (e.g. in a local `.env` file, gitignored, or exported in your shell), then:
+
+```bash
+docker compose up --build
+```
+
+The API is available at `http://localhost:8080`, migrations are applied automatically on startup, and Postgres data persists in a named volume across restarts.
+
+To build the image standalone (e.g. to test what gets deployed):
+
+```bash
+docker build -t authforge-api .
+```
+
+
+## ☁️ Deploying to Render
+
+Render only supports PostgreSQL, which is why the database layer targets it. The included `render.yaml` blueprint provisions both the web service (built from the `Dockerfile`) and a managed Postgres database, and wires the connection string between them automatically.
+
+1. Push the repository to GitHub.
+2. In the Render dashboard, choose **New → Blueprint** and point it at the repository — Render reads `render.yaml` and provisions both resources.
+3. `JwtSettings:SecretKey` and `CryptoSettings:Pepper` are generated automatically by Render (`generateValue: true`); no manual secret entry needed.
+4. On deploy, the container runs any pending EF Core migrations on startup and exposes `GET /health` for Render's health check.
+
+To deploy without the blueprint (manually creating the service in the dashboard instead), set the runtime to **Docker** and configure these environment variables yourself: `ConnectionStrings__DefaultConnection` (from your Render Postgres instance — the `postgres://...` URI it gives you is accepted as-is), `JwtSettings__SecretKey`, `JwtSettings__Issuer`, `JwtSettings__Audience`, `JwtSettings__ExpirationInMinutes`, `CryptoSettings__Pepper`.
+
+
 ## 📚 API Endpoints
 
 | Method | Endpoint                                                | Description                                                   |

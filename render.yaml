@@ -1,0 +1,31 @@
+databases:
+  - name: authforge-db
+    databaseName: authforge
+    user: authforge
+    plan: free
+
+services:
+  - type: web
+    name: authforge-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: authforge-db
+          property: connectionString
+      - key: JwtSettings__SecretKey
+        generateValue: true
+      - key: JwtSettings__Issuer
+        value: AuthForge
+      - key: JwtSettings__Audience
+        value: AuthForgeClients
+      - key: JwtSettings__ExpirationInMinutes
+        value: "120"
+      - key: CryptoSettings__Pepper
+        generateValue: true
