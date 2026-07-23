@@ -12,6 +12,7 @@ namespace Infrastructure.Persistence.Configurations
         public void Configure(EntityTypeBuilder<UsersLogEntity> builder)
         {
             builder.Property(log => log.OperationType).IsRequired().HasMaxLength(16);
+            builder.Property(log => log.Birthdate).HasColumnType("date");
             builder.HasIndex(log => log.RecordId);
         }
     }
