@@ -16,8 +16,8 @@ AuthForge is an independent identity provider designed to serve as a centralized
 * User authentication (Login)
 * JWT-based authentication and authorization
 * Argon2id password hashing
-* SQL Server integration
-* Dapper-based data access
+* PostgreSQL integration
+* EF Core for writes, Dapper for reads
 * Clean Architecture implementation
 * Dependency Injection
 * Swagger/OpenAPI documentation
@@ -59,8 +59,8 @@ Implements the application's business logic.
 
 Responsible for external concerns.
 
-* Dapper repositories
-* SQL Server integration
+* Repositories combining EF Core (writes) and Dapper (reads)
+* PostgreSQL integration
 * JWT services
 * Argon2id password hashing
 
@@ -107,7 +107,17 @@ cd AuthForge
 
 ### 2. Configure the Database
 
-Execute the SQL scripts located in the `Database` folder to create the database structure and required stored procedures.
+Create a PostgreSQL database (locally, via Docker, or a managed instance such as Render), then apply the EF Core migrations to create the schema:
+
+```bash
+dotnet ef database update --project Backend/Infrastructure --startup-project Backend/Presentation
+```
+
+New schema changes go through EF Core migrations rather than hand-written SQL:
+
+```bash
+dotnet ef migrations add <MigrationName> --project Backend/Infrastructure --startup-project Backend/Presentation --output-dir Persistence/Migrations
+```
 
 ### 3. Configure JWT Secret
 
@@ -130,7 +140,7 @@ Update your `appsettings.json`:
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Your SQL Server connection string"
+    "DefaultConnection": "Host=localhost;Port=5432;Database=authforge;Username=postgres;Password=YourPassword"
   }
 }
 ```
@@ -184,8 +194,8 @@ This interface allows you to test and explore all available endpoints.
 | ----------------- | ------------------ |
 | Framework         | .NET 9             |
 | Language          | C# 13              |
-| Database          | SQL Server         |
-| Data Access       | Dapper             |
+| Database          | PostgreSQL         |
+| Data Access       | EF Core (writes), Dapper (reads) |
 | Authentication    | JWT                |
 | Password Security | Argon2id           |
 | API Documentation | Swagger/OpenAPI    |
