@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Domain.Entities
 {
-    [Table("Users")]
     public class UsersEntity
     {
         [Key]

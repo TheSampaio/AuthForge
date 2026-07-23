@@ -1,61 +1,46 @@
-﻿using Dapper;
+using Dapper;
 using Domain.Entities;
 using Domain.Interfaces;
+using Infrastructure.Persistence;
 using Infrastructure.Statements;
 using System.Data;
 
 namespace Infrastructure.Repositories
 {
     public class UsersRepository(
-        IDbConnection dbConnection
+        IDbConnection dbConnection,
+        AppDbContext dbContext
     )
         : IUsersRepository
     {
         public async Task<IEnumerable<UsersEntity>> GetAllAsync()
         {
-            var result = await dbConnection.QueryAsync<UsersEntity>(UsersStatements.SelectAll);
-            return result;
+            return await dbConnection.QueryAsync<UsersEntity>(UsersStatements.SelectAll);
         }
 
         public async Task<UsersEntity?> GetByIdAsync(int id)
         {
-            var parameters = new { Id = id };
-            var result = await dbConnection.QueryFirstOrDefaultAsync<UsersEntity>(
-                UsersStatements.SelectById,
-                parameters
+            return await dbConnection.QueryFirstOrDefaultAsync<UsersEntity>(
+                UsersStatements.SelectById, new { Id = id }
             );
-            return result;
         }
 
         public async Task<UsersEntity?> GetByEmailAsync(string email)
         {
-            var parameters = new { Email = email };
-            var result = await dbConnection.QueryFirstOrDefaultAsync<UsersEntity>(
-                UsersStatements.SelectByEmail,
-                parameters
-             );
-            return result;
+            return await dbConnection.QueryFirstOrDefaultAsync<UsersEntity>(
+                UsersStatements.SelectByEmail, new { Email = email }
+            );
         }
 
         public async Task<int> CreateAsync(UsersEntity user)
         {
-            var parameters = new { 
-                user.FirstName,
-                user.LastName,
-                user.Email,
-                user.PasswordHash,
-                user.Birthdate,
-                IsActive = 1,
-                OperationUserId = 0
-            };
+            dbContext.Users.Add(user);
 
-            var result = await dbConnection.ExecuteScalarAsync<int>(
-                "sp_UpsertUser",
-                parameters,
-                commandType: CommandType.StoredProcedure
-            );
+            // No authenticated actor exists yet for a self-registration; the record being
+            // created is its own operation source, matching the previous stored-procedure behavior.
+            await dbContext.SaveChangesWithAuditAsync(operationUserId: 0);
 
-            return result;
+            return user.Id;
         }
     }
 }

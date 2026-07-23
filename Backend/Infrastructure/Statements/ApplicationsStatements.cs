@@ -1,58 +1,48 @@
-﻿namespace Infrastructure.Statements
+namespace Infrastructure.Statements
 {
     public class ApplicationsStatements
     {
         public const string SelectById = @"
             SELECT
-                Id,
-                Name,
-                ClientId,
-                ClientSecret,
-                IsActive,
-                CreatedAtUtc
+                id,
+                name,
+                client_id,
+                client_secret,
+                is_active,
+                created_at_utc
             FROM
-                Applications 
+                applications
             WHERE
-                IsActive = 1
-                AND Id = @Id";
+                is_active = true
+                AND id = @Id";
 
         public const string SelectByClientId = @"
             SELECT
-                Id,
-                Name,
-                ClientId,
-                ClientSecret,
-                IsActive,
-                CreatedAtUtc
+                id,
+                name,
+                client_id,
+                client_secret,
+                is_active,
+                created_at_utc
             FROM
-                Applications 
+                applications
             WHERE
-                IsActive = 1
-                AND ClientId = @ClientId";
-
-        public const string SelectClientIdById = @"
-            SELECT
-                ClientId
-            FROM
-                Applications
-            WHERE
-                Id = @Id";
+                is_active = true
+                AND client_id = @ClientId";
 
         public const string SelectByUserId = @"
-            SELECT 
-                A.Id, 
-                A.Name, 
-                A.ClientId, 
-                A.IsActive 
-            FROM 
-                Applications A
-                INNER JOIN UserApplications UA ON A.Id = UA.ApplicationId
-            WHERE 
-                A.IsActive = 1 
-                AND UA.IsActive = 1 
-                AND UA.UserId = @UserId 
-                AND UA.Roles LIKE '%Admin%'";
-
-        public const string UpsertApplication = "sp_UpsertApplication";
+            SELECT
+                a.id,
+                a.name,
+                a.client_id,
+                a.is_active
+            FROM
+                applications a
+                INNER JOIN user_applications ua ON a.id = ua.application_id
+            WHERE
+                a.is_active = true
+                AND ua.is_active = true
+                AND ua.user_id = @UserId
+                AND ua.roles LIKE '%Admin%'";
     }
 }

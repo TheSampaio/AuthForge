@@ -1,13 +1,15 @@
-﻿using Dapper;
+using Dapper;
 using Domain.Entities;
 using Domain.Interfaces;
+using Infrastructure.Persistence;
 using Infrastructure.Statements;
 using System.Data;
 
 namespace Infrastructure.Repositories
 {
     public class ApplicationsRepository(
-        IDbConnection dbConnection
+        IDbConnection dbConnection,
+        AppDbContext dbContext
     )
         : IApplicationsRepository
     {
@@ -34,32 +36,24 @@ namespace Infrastructure.Repositories
 
         public async Task<Guid> CreateAsync(string name, int operationUserId)
         {
-            var parameters = new DynamicParameters();
-            parameters.Add("Name", name);
-            parameters.Add("OperationUserId", operationUserId);
+            var application = new ApplicationsEntity
+            {
+                Name = name,
+                ClientId = Guid.NewGuid()
+            };
 
-            var id = await dbConnection.ExecuteScalarAsync<int>(
-                ApplicationsStatements.UpsertApplication, parameters, commandType: CommandType.StoredProcedure
-            );
+            dbContext.Applications.Add(application);
+            await dbContext.SaveChangesWithAuditAsync(operationUserId);
 
-            return await dbConnection.ExecuteScalarAsync<Guid>(
-                ApplicationsStatements.SelectClientIdById, new { Id = id }
-            );
+            return application.ClientId;
         }
 
         public async Task DeactivateAsync(ApplicationsEntity application, int operationUserId)
         {
-            var parameters = new DynamicParameters();
-            parameters.Add("Id", application.Id);
-            parameters.Add("Name", application.Name);
-            parameters.Add("ClientId", application.ClientId);
-            parameters.Add("ClientSecret", application.ClientSecret);
-            parameters.Add("IsActive", false);
-            parameters.Add("OperationUserId", operationUserId);
+            application.IsActive = false;
 
-            await dbConnection.ExecuteScalarAsync<int>(
-                ApplicationsStatements.UpsertApplication, parameters, commandType: CommandType.StoredProcedure
-            );
+            dbContext.Applications.Update(application);
+            await dbContext.SaveChangesWithAuditAsync(operationUserId);
         }
     }
 }

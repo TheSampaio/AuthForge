@@ -1,10 +1,12 @@
 ﻿using Application.Interfaces;
 using Application.Services;
+using Dapper;
 using Domain.Interfaces;
+using Infrastructure.Persistence;
 using Infrastructure.Repositories;
 using Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Presentation.Swagger;
@@ -21,7 +23,16 @@ namespace Presentation.Extensions
             var connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("Connection string not found.");
 
-            services.AddScoped<IDbConnection>(_ => new SqlConnection(connectionString));
+            // All Postgres columns are snake_case while entity properties stay PascalCase;
+            // this lets Dapper map them without aliasing every column in every query.
+            DefaultTypeMap.MatchNamesWithUnderscores = true;
+
+            services.AddDbContext<AppDbContext>(options => options
+                .UseNpgsql(connectionString)
+                .UseSnakeCaseNamingConvention());
+
+            // Dapper reads and EF Core writes share the same connection within a request scope.
+            services.AddScoped<IDbConnection>(sp => sp.GetRequiredService<AppDbContext>().Database.GetDbConnection());
 
             services.AddScoped<IUsersRepository, UsersRepository>();
             services.AddScoped<IApplicationsRepository, ApplicationsRepository>();
