@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using Npgsql;
 using Presentation.Swagger;
 using System.Data;
 using System.Reflection;
@@ -22,6 +23,8 @@ namespace Presentation.Extensions
         {
             var connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("Connection string not found.");
+
+            connectionString = NormalizeConnectionString(connectionString);
 
             // All Postgres columns are snake_case while entity properties stay PascalCase;
             // this lets Dapper map them without aliasing every column in every query.
@@ -47,6 +50,32 @@ namespace Presentation.Extensions
             services.AddSingleton<IJwtService, JwtService>();
 
             return services;
+        }
+
+        /// <summary>
+        /// Converts a "postgres://user:password@host:port/database" URI - the format Render and
+        /// most other PaaS providers inject managed database credentials in - into the
+        /// keyword=value format Npgsql expects. Strings already in that format pass through unchanged.
+        /// </summary>
+        /// <param name="connectionString">The raw connection string from configuration.</param>
+        /// <returns>A connection string in Npgsql keyword=value format.</returns>
+        private static string NormalizeConnectionString(string connectionString)
+        {
+            if (!Uri.TryCreate(connectionString, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != "postgres" && uri.Scheme != "postgresql"))
+                return connectionString;
+
+            var userInfo = uri.UserInfo.Split(':', 2);
+
+            return new NpgsqlConnectionStringBuilder
+            {
+                Host = uri.Host,
+                Port = uri.Port,
+                Username = Uri.UnescapeDataString(userInfo[0]),
+                Password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty,
+                Database = uri.AbsolutePath.TrimStart('/'),
+                SslMode = SslMode.Require
+            }.ToString();
         }
 
         public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)

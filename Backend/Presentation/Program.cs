@@ -1,3 +1,5 @@
+using Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Presentation.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +16,15 @@ builder.Services.Configure<RouteOptions>(options =>
 });
 
 var app = builder.Build();
+
+// Deployment targets like Render don't offer an easy pre-deploy shell step, so the app
+// applies any pending EF Core migrations itself on startup. Safe to run on every boot:
+// already-applied migrations are no-ops.
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 if (app.Environment.IsDevelopment())
 {
