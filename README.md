@@ -192,6 +192,11 @@ This interface allows you to test and explore all available endpoints.
 | Architecture      | Clean Architecture |
 
 
+## 🤝 Contributing
+
+Engineering conventions for this repository (Clean Architecture rules, SOLID/DRY/KISS, comment and documentation style, git workflow) are documented in [CLAUDE.md](CLAUDE.md). Read it before making changes.
+
+
 ## 📄 License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
